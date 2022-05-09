@@ -1,17 +1,20 @@
+
 let config = {
     type: Phaser.AUTO,
-    width: 1334,
-    height: 480,
+    width: window.innerWidth,
+    height: window.innerHeight,
     parent: 'gameContainer',
     scale: {
         mode: Phaser.Scale.FIT,
-        autoCenter: Phaser.Scale.CENTER_BOTH
+        autoCenter: Phaser.Scale.CENTER_BOTH,
     },
     scene: {
         preload,
         create,
         update
     },
+    //scene: null,
+    backgroundColor: 0x333333,
     physics: {
         default: 'arcade',
         arcade: {
@@ -21,34 +24,54 @@ let config = {
     }
 }
 
+
 let game = new Phaser.Game(config)
 let scene
 let player
-let ufoNum = 10
+let ufo
+let ufoSpeed = Math.random() * 2
+let ufoNum = 13
 let ufoGroup
 let ufoSpacing = 40
 let ufoSwing = Math.random() * 60
 let keyUp, keyDown, keyRight, keyLeft, keyShoot
 let bulletSpeed = 800
 let bulletShooted
+let boomGroup
+
 
 // upload assets come to game
 function preload() {
     scene = this
-    scene.load.image('bg', '../assets/bg.png')
+    scene.load.image('background', '../assets/bg.png')
     scene.load.image('space', '../assets/spaceshi.png')
     scene.load.image('bullet', '../assets/bullet.png')
     scene.load.image('ufo', '../assets/ufo.png')
+    scene.load.image('boom', '../assets/boom.png')
+    scene.load.image('boomText', '../assets/boom2.png')
 }
 //------------------------------------ End -----------------------------------------------
 //----------------------------------------------------------------------------------------
 // create assets running insite games
 function create() {
-    scene.add.image(680, 100, 'bg')
+    createBackground()
     createPlayer()
     createButtonControllerPlayer()
     bulletShooted = scene.add.group()
     createUfo()
+    scene.physics.add.overlap(ufoGroup, bulletShooted, ufoDestroy)
+    boomGroup = scene.add.group()
+
+}
+// create background
+function createBackground() {
+    let image = scene.add.image(scene.cameras.main.width / 2, scene.cameras.main.height / 2, 'background')
+    let scaleX = scene.cameras.main.width / image.width
+    let scaleY = scene.cameras.main.height / image.height
+    let scale = Math.max(scaleX, scaleY)
+    image.setScale(scale).setScrollFactor(0)
+    // console.log('kkkk', scene.cameras.main.width);
+
 }
 //Create scenes
 function createPlayer() {
@@ -68,7 +91,7 @@ function createButtonControllerPlayer() {
 function createUfo() {
     ufoGroup = scene.add.group()
     for (let i = 0; i < ufoNum; i++) {
-        let ufo = scene.physics.add.sprite(200, 80 + (i * ufoSpacing), 'ufo')
+        ufo = scene.physics.add.sprite(200, 80 + (i * ufoSpacing), 'ufo')
         ufo.setScale(0.06)
         ufo.speed = (Math.random() * 2) + 2
         ufo.startX = config.width + (ufo.width / 2)
@@ -79,6 +102,23 @@ function createUfo() {
         ufoGroup.add(ufo)
     }
 }
+//event create UFO destroy
+function ufoDestroy(ufo, bullet) {
+    boomEfface(ufo.x, ufo.y)
+    bullet.destroy()
+    ufo.destroy()
+
+}
+function boomEfface(posX, posY) {
+    let boomEfface1 = scene.add.sprite(posX, posY, 'boom')
+    boomEfface1.scale = 0.1
+    boomEfface1.rotation = Phaser.Math.Between(0, 360)
+    let boomEfface2 = scene.add.sprite(posX, posY, 'boomText')
+    boomEfface2.scale = 0.05
+    boomEfface2.rotation = Phaser.Math.Between(0, 360)
+    boomGroup.add(boomEfface1)
+    boomGroup.add(boomEfface2)
+}
 //------------------------------------ End -----------------------------------------------
 //----------------------------------------------------------------------------------------
 //even update
@@ -87,8 +127,9 @@ function update() {
     updateControlPlayer()
     updateShooting()
     updateUFO()
+    updateBoomEfface()
 }
-//Control player
+//event update control player
 function updateControlPlayer() {
     if (keyUp.isDown) {
         player.setVelocityY(-player.speed)
@@ -121,14 +162,14 @@ function updateControlPlayer() {
         player.x = config.width - (player.getBounds().width / 2 + 20)
     }
 }
-//update when player shooting
+//event update when player shooting
 function updateShooting() {
     if (Phaser.Input.Keyboard.JustDown(keyShoot)) {
         let bullet = scene.physics.add.sprite(player.x + 10, player.y + 2, 'bullet')
         bullet.setScale(0.02)
         bullet.body.velocity.x = bulletSpeed
         bulletShooted.add(bullet)
-        console.log('shooting.....', bulletShooted.children);
+        //console.log('shooting.....', bulletShooted.children);
     }
     // event bullet outsite screen is destroy
     for (let i = 0; i < bulletShooted.getChildren().length; i++) {
@@ -137,11 +178,12 @@ function updateShooting() {
         //bullet.rotation += 0.1  
         if (bullet.x > config.width) {
             bullet.destroy()
-            console.log('bulletDestroy.....', bulletShooted.children);
+            //console.log('bulletDestroy.....', bulletShooted.children);
         }
     }
 
 }
+//event opent ufo
 function updateUFO() {
     //console.log(ufoGroup.getChildren().length);
     for (let i = 0; i < ufoGroup.getChildren().length; i++) {
@@ -156,6 +198,20 @@ function updateUFO() {
         }
     }
 }
+//event efface boom
+function updateBoomEfface() {
+    for (let i = 0; i < boomGroup.getChildren().length; i++) {
+        let boom = boomGroup.getChildren()[i]
+        boom.rotation += 0.06
+        boom.scale += 0.01
+        boom.alpha -= 0.05
+        if (boom.alpha <= 0) {
+            boom.destroy()
+        }
+        //console.log(boomGroup.getChildren());
+    }
+}
+
 
 
 //------------------------------------ End -----------------------------------------------
