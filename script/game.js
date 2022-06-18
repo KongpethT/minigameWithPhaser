@@ -1,5 +1,5 @@
 
-let config = {
+let config = {//
     type: Phaser.AUTO,
     width: window.innerWidth,
     height: window.innerHeight,
